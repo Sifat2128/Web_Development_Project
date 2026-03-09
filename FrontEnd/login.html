@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="login_style.css">
+</head>
+<body>
+    <div class="nav-bar">
+       <div class="logo">
+       
+            🫁 PulmoScan
+        
+       </div> 
+       <div class="nav-cons">
+        <div class="nav-link">
+            <a href="homepage.html">Home</a>
+        </div>
+        
+        <div class= "nav-link">
+            <a href="about.html">About</a>
+        </div>
+        <div class="nav-link">
+            <a href="https://wa.me/8801776111134?text=Hello%20I%20want%20to%20know%20about%20your%20service" target="_blank">
+Contact</a>
+        </div>
+       </div>
+        <div class="ham-img">
+            <img src="./images/Hamburger.svg" alt="">
+        </div>
+        <div class="mobile-menu">
+
+<div class="close-menu">✕</div>
+
+<a href="homepage.html">Home</a>
+<a href="about.html">About</a>
+<a href="https://wa.me/8801776111134?text=Hello%20I%20want%20to%20know%20about%20your%20service" target="_blank">
+Contact</a>
+
+       
+    </div>
+    </div>
+    <div class="main">
+        <!-- <img src="./images/lungs_background.jpg" alt=""> -->  
+         <div class="whole">
+          <div class="log-sign">
+            <div class="login">
+                <a href="login.html">LogIn</a>
+            </div>
+            <div class="signup">
+                <a href="signup.html">SignUp</a>
+            </div>
+          </div>
+        <div class="form">
+            <p>
+                Welcome Back!
+            <p>
+           <form action="">
+              <div class="email">
+              <label for="" id="email">Email</label>
+              <input type="email" placeholder="pulmoscan@gmail.com">
+              </div>
+              <div class="pass">
+              <label for="" id="Password">Password</label>
+              <input type="password" placeholder="Password">
+              </div>
+              <div class="checkbo">
+              <input type="checkbox">
+               <label for="">Remember me</label>
+              </div>
+              <a href="dashboard.html">Login</a>
+           </form>
+        </div> 
+    </div>
+    </div>
+    <div class="footer">
+        <footer>
+            &copy;Rights reserved by PulmoScanIm
+        </footer>
+    </div>
+    <script>
+
+const hamburger = document.querySelector(".ham-img");
+const mobileMenu = document.querySelector(".mobile-menu");
+const closeMenu = document.querySelector(".close-menu");
+
+hamburger.addEventListener("click", () => {
+    mobileMenu.classList.add("active");
+});
+
+closeMenu.addEventListener("click", () => {
+    mobileMenu.classList.remove("active");
+});
+
+</script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>About | PulmoScan</title>
+
+<link rel="stylesheet" href="about.css">
+
+</head>
+
+
+<body>
+
+
+
+<!-- NAVBAR -->
+
+<header class="navbar">
+
+<div class="logo">
+
+🫁 PulmoScan
+
+</div>
+
+<nav class="nav-links">
+
+<a href="homepage.html">Home</a>
+
+<a href="login.html">Login</a>
+<a href="signup.html">SignUp</a>
+<a href="about.html">About</a>
+
+</nav>
+<div class="hamburger">
+    <img src="./images/Hamburger.svg" alt="">
+</div>
+<div class="mobile-menu">
+
+<div class="close-menu">✕</div>
+
+<a href="homepage.html">Home</a>
+<a href="login.html">Login</a>
+<a href="signup.html">SignUp</a>
+<a href="about.html">About</a>
+
+</div>
+</header>
+
+
+
+<!-- HERO SECTION -->
+
+<section class="hero">
+
+<h1>About PulmoScan</h1>
+
+<p>
+
+PulmoScan is an AI-powered platform designed to assist in early lung disease detection
+
+through advanced medical image analysis.
+
+</p>
+
+</section>
+
+
+
+<!-- ABOUT SECTION -->
+
+<section class="about">
+
+<div class="about-container">
+
+<div class="about-text">
+
+<h2>Our Mission</h2>
+
+<p>
+
+Our mission is to combine artificial intelligence with medical imaging
+
+to help detect lung diseases earlier and improve healthcare outcomes.
+
+By using deep learning models trained on CT scan data, PulmoScan
+
+provides quick and reliable analysis for healthcare professionals
+
+and researchers.
+
+</p>
+
+</div>
+
+
+<div class="about-image">
+
+<img src="./images/about_visual.png" alt="medical ai">
+
+</div>
+
+</div>
+
+</section>
+
+
+
+<!-- FEATURES -->
+
+<section class="features">
+
+<h2 class="section-title">Why PulmoScan?</h2>
+
+<div class="feature-grid">
+
+
+<div class="feature-card">
+
+<h3>AI Analysis</h3>
+
+<p>
+
+Advanced deep learning algorithms analyze lung CT scans with high accuracy.
+
+</p>
+
+</div>
+
+
+<div class="feature-card">
+
+<h3>Fast Results</h3>
+
+<p>
+
+Upload scans and receive predictions within seconds.
+
+</p>
+
+</div>
+
+
+<div class="feature-card">
+
+<h3>Secure Platform</h3>
+
+<p>
+
+Medical data is handled with strict security and privacy measures.
+
+</p>
+
+</div>
+
+
+<div class="feature-card">
+
+<h3>Research Friendly</h3>
+
+<p>
+
+Designed to support researchers working with medical imaging datasets.
+
+</p>
+
+</div>
+
+
+</div>
+
+</section>
+
+
+
+<!-- TEAM -->
+
+<section class="team">
+
+<h2 class="section-title">Our Team</h2>
+
+<div class="team-grid">
+
+
+<div class="team-card">
+
+<img src="https://i.pravatar.cc/200?img=8">
+
+<h3>Sifat Ahasan</h3>
+
+<p>AI Developer</p>
+
+</div>
+
+
+<div class="team-card">
+
+<img src="https://i.pravatar.cc/200?img=5">
+
+<h3>Farzana Faiza Borno</h3>
+
+<p>Backend Developer</p>
+
+</div>
+
+
+<!-- <div class="team-card">
+
+<img src="https://i.pravatar.cc/200?img=8">
+
+<h3></h3>
+
+<p>Backend Developer</p>
+
+</div> -->
+
+
+</div>
+
+</section>
+
+
+
+<!-- FOOTER -->
+
+<footer class="footer">
+
+<p>
+
+© 2026 PulmoScan — AI Powered Lung Detection
+
+</p>
+
+</footer>
+
+<script>
+
+const hamburger = document.querySelector(".hamburger");
+const mobileMenu = document.querySelector(".mobile-menu");
+const closeMenu = document.querySelector(".close-menu");
+
+hamburger.addEventListener("click", () => {
+    mobileMenu.classList.add("active");
+});
+
+closeMenu.addEventListener("click", () => {
+    mobileMenu.classList.remove("active");
+});
+
+</script>
+
+</body>
+
+</html>

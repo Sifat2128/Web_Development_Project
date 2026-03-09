@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="dashboard_style.css">
+</head>
+<body>
+    <div class="nav">
+        <div class="logo">
+            <span>🫁</span> PulmoScan
+        </div>
+        <div class="nav-links">
+             <a href="dashboard.html">Dashboard</a>
+             <a href="homepage.html">Home</a>
+             <a href="about.html">About</a>
+        </div>
+    <div class="tog">
+        <div class="profile">
+            <img src="https://i.pravatar.cc/100">
+            <span>Sifat Ahasan</span>
+        </div>
+         <div class="hamburger">
+            <img src="./images/Hamburger.svg" alt="">
+        </div>
+     <div class="mobile-menu">
+
+        <div class="close-menu">✕</div>
+
+         <a href="dashboard.html">Dashboard</a>
+         <a href="homepage.html">Home</a>
+         <a href="about.html">About</a>
+     </div>
+    </div>
+    </div>
+    <div class="hero">
+        <div class="head">
+            <p><span>Sifat</span>, ready to Scan?</p>
+            <article>AI-Powered Lung Analysis - Early Detection helps a lot.</article>
+        </div> 
+        <div class="card">
+            <div class="card-logo">
+                🫁
+            </div>
+            <p>Drag & Drop your CT scan</p>
+            <span>Supports JPF,PNG,DICOM</span>
+            
+            <button>Upload & Analyze</button>
+        </div>
+        <div class="stats">
+            <div class="stat-card" id="one">
+                Previous Scans
+                <h3>3</h3>
+            </div>
+            <div class="stat-card" id="two">
+                Accuracy
+                <h3>94%</h3>
+            </div>
+        </div>
+    </div>
+    <script>
+
+const hamburger = document.querySelector(".hamburger");
+const mobileMenu = document.querySelector(".mobile-menu");
+const closeMenu = document.querySelector(".close-menu");
+
+hamburger.addEventListener("click", () => {
+    mobileMenu.classList.add("active");
+});
+
+closeMenu.addEventListener("click", () => {
+    mobileMenu.classList.remove("active");
+});
+
+</script>
+</body>
+</html>  

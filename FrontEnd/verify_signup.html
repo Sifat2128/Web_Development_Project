@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Account | PulmoScan</title>
+  <link rel="stylesheet" href="verify_signup.css">
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="logo">🫁 PulmoScan</div>
+    <nav class="nav-links">
+      <a href="homepage.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="https://wa.me/8801776111134?text=Hello%20I%20want%20to%20know%20about%20your%20service" target="_blank">
+Contact</a>
+    </nav>
+    <div class="hamburger">
+        <img src="./images/Hamburger.svg" alt="">
+    </div>
+    <div class="mobile-menu">
+
+<div class="close-menu">✕</div>
+
+<a href="homepage.html">Home</a>
+<a href="about.html">About</a>
+<a href="https://wa.me/8801776111134?text=Hello%20I%20want%20to%20know%20about%20your%20service" target="_blank">
+Contact</a>
+
+</div>
+  </header>
+
+  <!-- VERIFICATION FORM -->
+  <section class="verify-hero">
+    <div class="verify-container">
+      <h1>Verify Your Account</h1>
+      <p>Please enter the verification code sent to your email to complete the signup process.</p>
+
+      <form class="verify-form">
+        <input type="text" placeholder="Enter Verification Code" required>
+        <a class="submit" href="login.html">Verify</a>
+      </form>
+
+      <p class="resend">
+        Didn't receive the code? <a href="#">Resend Code</a>
+      </p>
+    </div>
+  </section>
+<script>
+
+const hamburger = document.querySelector(".hamburger");
+const mobileMenu = document.querySelector(".mobile-menu");
+const closeMenu = document.querySelector(".close-menu");
+
+hamburger.addEventListener("click", () => {
+    mobileMenu.classList.add("active");
+});
+
+closeMenu.addEventListener("click", () => {
+    mobileMenu.classList.remove("active");
+});
+
+</script>
+</body>
+</html>
