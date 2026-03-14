@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="stylesheet" href="signup_style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='signup_style.css') }}">
 </head>
 <body>
     <div class="nav-bar">
@@ -56,20 +56,20 @@ Contact</a>
             <p>
                 SigningUp
             <p>
-           <form action="">
+           <form action="{{ url_for('signup') }}" method="POST">
               <div class="email">
               <label for="" id="email">Email</label>
-              <input type="email" placeholder="pulmoscan@gmail.com">
+              <input type="email" name="email" placeholder="pulmoscan@gmail.com">
               </div>
               <div class="pass">
               <label for="" id="Password">Password</label>
-              <input type="password" placeholder="Password">
+              <input type="password" name="password" placeholder="Password">
               </div>
               <div class="checkbo">
               <input type="checkbox">
                <label for="">Remember me</label>
               </div>
-              <a href="verify_signup.html">Signup</a>
+              <<button type="submit" class="submit-btn">Signup</button>
                
            </form>
         </div> 
