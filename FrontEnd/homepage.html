@@ -5,15 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="stylesheet" href="homepage.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='homepage.css') }}">
 </head>
 <body>
     <nav class="navbar">
     <div class="logo">🫁 PulmoScan</div>
     <div class="logo-invi">PulmoScan</div>
     <ul class="nav-links">
-        <li><a href="homepage.html">Home</a></li>
-        <li><a href="about.html">About</a></li>
+        <li><a href="{{ url_for('home') }}">Home</a></li>
+        <li><a href="{{ url_for('about') }}">About</a></li>
         <!-- <li><a href="#">Docs</a></li> -->
          <li><a href="https://wa.me/8801776111134?text=Hello%20I%20want%20to%20know%20about%20your%20service" target="_blank">
 Contact</a><li>
@@ -21,18 +21,18 @@ Contact</a><li>
     
     <div class="auth">
         <div class="hamburger">
-        <img src="./images/Hamburger.svg" alt="">
+        <img src="{{ url_for('static', filename='images/Hamburger.svg') }}" alt="">
        </div>
-        <a class="login" href="login.html">Login</a>
-        <a class="signup" href="signup.html">Get Started</a>
+        <a class="login" href="{{ url_for('login') }}">Login</a>
+        <a class="signup" href="{{ url_for('signup') }}">Get Started</a>
         
         <div class="mobile-menu">
           <div class="close-menu">✕</div>
-            <a href="dashboard.html">Dashboard</a>
-            <a href="homepage.html">Home</a>
-            <a href="about.html">About</a>
-            <a href="login.html">Login</a>
-            <a href="signup.html">SignUp</a>
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('home') }}">Home</a>
+            <a href="{{ url_for('about') }}">About</a>
+            <a href="{{ url_for('login') }}">Login</a>
+            <a href="{{ url_for('signup') }}">SignUp</a>
         </div>
     </div>
 </nav>
@@ -46,8 +46,8 @@ potential diseases early, helping doctors and patients act faster.
 </p>
 
 <div class="hero-buttons">
-<a href="signup.html" class="primary">Start Scanning</a>
-<a href="about.html" class="secondary">Learn More</a>
+<a href="{{ url_for('signup') }}" class="primary">Start Scanning</a>
+<a href="{{ url_for('about') }}" class="secondary">Learn More</a>
 </div>
 
 </section>
@@ -103,7 +103,7 @@ potential diseases early, helping doctors and patients act faster.
 
 <h2>Start Detecting Lung Diseases Early</h2>
 <br>
-<a href="signup.html" class="button">Get Started</a>
+<a href="{{ url_for('signup') }}" class="button">Get Started</a>
 
 </section>
 <footer>
