@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="stylesheet" href="dashboard_style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard_style.css') }}">
 </head>
 <body>
     <div class="nav">
@@ -12,31 +12,33 @@
             <span>🫁</span> PulmoScan
         </div>
         <div class="nav-links">
-             <a href="dashboard.html">Dashboard</a>
-             <a href="homepage.html">Home</a>
-             <a href="about.html">About</a>
-        </div>
+             <a href="{{ url_for('dashboard') }}">Dashboard</a>
+             <a href="{{ url_for('home') }}">Home</a>
+             <a href="{{ url_for('about') }}">About</a>
+             <a href="{{ url_for('logout') }}" style="color: #ff6b6b;">Logout</a>
+            </div>
     <div class="tog">
         <div class="profile">
             <img src="https://i.pravatar.cc/100">
-            <span>Sifat Ahasan</span>
+            <span>{{user_name}}</span>
         </div>
          <div class="hamburger">
-            <img src="./images/Hamburger.svg" alt="">
+            <img src="{{ url_for('static', filename='images/Hamburger.svg') }}" alt="">
         </div>
      <div class="mobile-menu">
 
         <div class="close-menu">✕</div>
 
-         <a href="dashboard.html">Dashboard</a>
-         <a href="homepage.html">Home</a>
-         <a href="about.html">About</a>
-     </div>
+         <a href="{{ url_for('dashboard') }}">Dashboard</a>
+         <a href="{{ url_for('home') }}">Home</a>
+         <a href="{{ url_for('about') }}">About</a>
+         <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
     </div>
     </div>
     <div class="hero">
         <div class="head">
-            <p><span>Sifat</span>, ready to Scan?</p>
+            <p><span>{{ user_name.split()[0] }}</span>, ready to Scan?</p>
             <article>AI-Powered Lung Analysis - Early Detection helps a lot.</article>
         </div> 
         <div class="card">
@@ -45,17 +47,19 @@
             </div>
             <p>Drag & Drop your CT scan</p>
             <span>Supports JPF,PNG,DICOM</span>
-            
-            <button>Upload & Analyze</button>
+            <form action="{{url_for('dashboard')}}" method="POST" enctype="multipart/form-data">
+                <input type="file" name="file" required style="margin: 10px 0;">
+            <button type="submit">Upload & Analyze</button>
+            </form>
         </div>
         <div class="stats">
             <div class="stat-card" id="one">
                 Previous Scans
-                <h3>3</h3>
+                <h3>{{scan_count}}</h3>
             </div>
             <div class="stat-card" id="two">
                 Accuracy
-                <h3>94%</h3>
+                <h3>{{avg_accuracy}}</h3>
             </div>
         </div>
     </div>
