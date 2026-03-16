@@ -44,9 +44,15 @@ Contact</a>
         <input type="text" name="otp" placeholder="Enter Verification Code" required>
         <button type="submit" class="verify-btn">Verify</button>
       </form>
-
+      {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{category}}" style="color: {{ 'red' if category == 'error' else 'green' }}; margin-bottom: 15px;">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
       <p class="resend">
-        Didn't receive the code? <a href="#">Resend Code</a>
+        Didn't receive the code? <a href="{{ url_for('resend_otp') }}">Resend Code</a>
       </p>
     </div>
   </section>
@@ -63,7 +69,32 @@ hamburger.addEventListener("click", () => {
 closeMenu.addEventListener("click", () => {
     mobileMenu.classList.remove("active");
 });
-
+const resendLink=document.querySelector(".resend a");
+let countdown = 30;
+let isWaiting=false;
+resendLink.addEventListener("click",function(e){
+  if (isWaiting){
+    e.preventDefault();
+    return;
+  }
+  isWaiting=true;
+  resendLink.style.opacity="0.5";
+  resendLink.style.cursor="not-allowed";
+  resendLink.style.pointerEvents="none";
+  let timer=setInterval(()=>{
+    countdown--;
+    resendLink.innerText=`Resend Code(${countdown}s)`;
+    if(countdown<=0){
+      clearInterval(timer);
+      resendLink.innerText="Resend Code";
+      resendLink.style.opacity="1";
+      resendLink.style.cursor="pointer";
+      resendLink.style.pointerEvents="auto";
+      isWaiting=false;
+      countdown=30;
+    }
+  },1000);
+})
 </script>
 </body>
 </html>
