@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Account | PulmoScan</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='verify_signup.css') }}">
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="logo">🫁 PulmoScan</div>
+    <nav class="nav-links">
+      <a href="homepage.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="https://wa.me/8801776111134?text=Hello%20I%20want%20to%20know%20about%20your%20service" target="_blank">
+Contact</a>
+    </nav>
+    <div class="hamburger">
+        <img src="{{ url_for('static', filename='images/Hamburger.svg') }}" alt="">
+    </div>
+    <div class="mobile-menu">
+
+<div class="close-menu">✕</div>
+
+<a href="{{ url_for('home') }}">Home</a>
+<a href="{{ url_for('about') }}">About</a>
+<a href="https://wa.me/8801776111134?text=Hello%20I%20want%20to%20know%20about%20your%20service" target="_blank">
+Contact</a>
+
+</div>
+  </header>
+
+  <!-- VERIFICATION FORM -->
+  <section class="verify-hero">
+    <div class="verify-container">
+      <h1>Verify Your Account</h1>
+      <p>Please enter the verification code sent to your email to complete the signup process.</p>
+
+      <form class="verify-form" action="{{url_for('verify_signup')}}" method="POST">
+        <input type="text" name="otp" placeholder="Enter Verification Code" required>
+        <button type="submit" class="verify-btn">Verify</button>
+      </form>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{category}}" style="color: {{ 'red' if category == 'error' else 'green' }}; margin-bottom: 15px;">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+      <p class="resend">
+        Didn't receive the code? <a href="{{ url_for('resend_otp') }}">Resend Code</a>
+      </p>
+    </div>
+  </section>
+<script>
+
+const hamburger = document.querySelector(".hamburger");
+const mobileMenu = document.querySelector(".mobile-menu");
+const closeMenu = document.querySelector(".close-menu");
+
+hamburger.addEventListener("click", () => {
+    mobileMenu.classList.add("active");
+});
+
+closeMenu.addEventListener("click", () => {
+    mobileMenu.classList.remove("active");
+});
+const resendLink=document.querySelector(".resend a");
+let countdown = 30;
+let isWaiting=false;
+resendLink.addEventListener("click",function(e){
+  if (isWaiting){
+    e.preventDefault();
+    return;
+  }
+  isWaiting=true;
+  resendLink.style.opacity="0.5";
+  resendLink.style.cursor="not-allowed";
+  resendLink.style.pointerEvents="none";
+  let timer=setInterval(()=>{
+    countdown--;
+    resendLink.innerText=`Resend Code(${countdown}s)`;
+    if(countdown<=0){
+      clearInterval(timer);
+      resendLink.innerText="Resend Code";
+      resendLink.style.opacity="1";
+      resendLink.style.cursor="pointer";
+      resendLink.style.pointerEvents="auto";
+      isWaiting=false;
+      countdown=30;
+    }
+  },1000);
+})
+</script>
+</body>
+</html>

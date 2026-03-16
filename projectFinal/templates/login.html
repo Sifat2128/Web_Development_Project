@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='login_style.css') }}">
+</head>
+<body>
+    <div class="nav-bar">
+       <div class="logo">
+       
+            🫁 PulmoScan
+        
+       </div> 
+       <div class="nav-cons">
+        <div class="nav-link">
+            <a href="{{ url_for('home') }}">Home</a>
+        </div>
+        
+        <div class= "nav-link">
+            <a href="{{ url_for('about') }}">About</a>
+        </div>
+        <div class="nav-link">
+            <a href="https://wa.me/8801776111134?text=Hello%20I%20want%20to%20know%20about%20your%20service" target="_blank">
+Contact</a>
+        </div>
+       </div>
+        <div class="ham-img">
+            <img src="{{ url_for('static', filename='images/Hamburger.svg') }}" alt="">
+        </div>
+        <div class="mobile-menu">
+
+<div class="close-menu">✕</div>
+
+<a href="{{ url_for('home') }}">Home</a>
+<a href="{{ url_for('about') }}">About</a>
+<a href="https://wa.me/8801776111134?text=Hello%20I%20want%20to%20know%20about%20your%20service" target="_blank">
+Contact</a>
+
+       
+    </div>
+    </div>
+    <div class="main">
+        <div class="outer-flash-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="external-flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+        <!-- <img src="./images/lungs_background.jpg" alt=""> -->  
+         <div class="whole">
+          <div class="log-sign">
+            <div class="login">
+                <a href="{{ url_for('login') }}">LogIn</a>
+            </div>
+            <div class="signup">
+                <a href="{{ url_for('signup') }}">SignUp</a>
+            </div>
+          </div>
+        <div class="form">
+            <p>
+                Welcome Back!
+            </p>
+            
+           <form action="{{ url_for('login') }}" method="POST">
+              <div class="email">
+              <label for="" id="email">Email</label>
+              <input type="email" name="email" placeholder="pulmoscan@gmail.com">
+              </div>
+              <div class="pass">
+              <label for="" id="Pass_input">Password</label>
+              <input type="password" id="Pass_input" name="password" placeholder="Password">
+              </div>
+              <div class="checkbo">
+              <input type="checkbox" name="remember" id="remember_me">
+               <label for="remember_me">Remember me for a month</label>
+              </div>
+             <button type="submit" class="verify-btn">Login</button>
+           </form>
+        </div> 
+    </div>
+    </div>
+    <div class="footer">
+        <footer>
+            &copy;Rights reserved by PulmoScanIm
+        </footer>
+    </div>
+    <script>
+
+const hamburger = document.querySelector(".ham-img");
+const mobileMenu = document.querySelector(".mobile-menu");
+const closeMenu = document.querySelector(".close-menu");
+
+hamburger.addEventListener("click", () => {
+    mobileMenu.classList.add("active");
+});
+
+closeMenu.addEventListener("click", () => {
+    mobileMenu.classList.remove("active");
+});
+
+</script>
+</body>
+</html>
