@@ -9,7 +9,7 @@
 
 <title>About | PulmoScan</title>
 
-<link rel="stylesheet" href="about.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='about.css') }}">
 
 </head>
 
@@ -29,25 +29,32 @@
 </div>
 
 <nav class="nav-links">
-
-<a href="homepage.html">Home</a>
-
-<a href="login.html">Login</a>
-<a href="signup.html">SignUp</a>
-<a href="about.html">About</a>
-
+    <a href="{{ url_for('home') }}">Home</a>
+    {% if session.get('user_id') %}
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    {% else %}
+        <a href="{{ url_for('login') }}">Login</a>
+        <a href="{{ url_for('signup') }}">SignUp</a>
+    {% endif %}
+    <a href="{{ url_for('about') }}">About</a>
 </nav>
 <div class="hamburger">
-    <img src="./images/Hamburger.svg" alt="">
+    <img src="{{ url_for('static', filename='images/Hamburger.svg') }}" alt="">
 </div>
 <div class="mobile-menu">
 
 <div class="close-menu">✕</div>
 
-<a href="homepage.html">Home</a>
-<a href="login.html">Login</a>
-<a href="signup.html">SignUp</a>
-<a href="about.html">About</a>
+<a href="{{ url_for('home') }}">Home</a>
+{% if session.get('user_id') %}
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    {% else %}
+        <a href="{{ url_for('login') }}">Login</a>
+        <a href="{{ url_for('signup') }}">SignUp</a>
+    {% endif %}
+    <a href="{{ url_for('about') }}">About</a>
 
 </div>
 </header>
@@ -101,7 +108,7 @@ and researchers.
 
 <div class="about-image">
 
-<img src="./images/about_visual.png" alt="medical ai">
+<img src="{{ url_for('static', filename='images/about_visual.png') }}" alt="medical ai">
 
 </div>
 
