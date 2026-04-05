@@ -280,3 +280,11 @@ transform:scale(1.2);
     background-color: #fff5f5;
     border-color: #ffa8a8;
 }
+.alert {
+    margin-top: 1rem;
+    padding: 1rem;
+    font-size: 1.3rem;
+    border-radius: 5px;
+    display: block;
+    width: 100%;
+}
