@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Dashboard | PulmoScan</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='dashboard_style.css') }}">
 </head>
 <body>
@@ -12,71 +12,120 @@
             <span>🫁</span> PulmoScan
         </div>
         <div class="nav-links">
-             <a href="{{ url_for('dashboard') }}">Dashboard</a>
-             <a href="{{ url_for('home') }}">Home</a>
+             <a href="{{ url_for('dashboard', patient_id=patient.id) }}">Dashboard</a>
+             <a href="{{ url_for('patient_info') }}">New Patient</a>
              <a href="{{ url_for('about') }}">About</a>
              <a href="{{ url_for('logout') }}" style="color: #ff6b6b;">Logout</a>
+        </div>
+        <div class="tog">
+            <div class="profile">
+                <img src="https://i.pravatar.cc/100" alt="Profile">
+                <span>{{ user_name.split('@')[0] if user_name else 'Doctor' }}</span>
             </div>
-    <div class="tog">
-        <div class="profile">
-            <img src="https://i.pravatar.cc/100">
-            <span>{{user_name}}</span>
-        </div>
-         <div class="hamburger">
-            <img src="{{ url_for('static', filename='images/Hamburger.svg') }}" alt="">
-        </div>
-     <div class="mobile-menu">
-
-        <div class="close-menu">✕</div>
-
-         <a href="{{ url_for('dashboard') }}">Dashboard</a>
-         <a href="{{ url_for('home') }}">Home</a>
-         <a href="{{ url_for('about') }}">About</a>
-         <a href="{{ url_for('logout') }}">Logout</a>
+            <div class="hamburger">
+                <img src="{{ url_for('static', filename='images/Hamburger.svg') }}" alt="Menu">
+            </div>
+            <div class="mobile-menu">
+                <div class="close-menu">✕</div>
+                <a href="{{ url_for('dashboard', patient_id=patient.id) }}">Dashboard</a>
+                <a href="{{ url_for('patient_info') }}">New Patient</a>
+                <a href="{{ url_for('about') }}">About</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </div>
         </div>
     </div>
-    </div>
+
     <div class="hero">
         <div class="head">
-            <p><span>{{ user_name.split()[0] }}</span>, ready to Scan?</p>
-            <article>AI-Powered Lung Analysis - Early Detection helps a lot.</article>
+            <p><span>{{ user_name.split('@')[0] if user_name else 'Doctor' }}</span>, ready to Scan?</p>
+            <article>Currently analyzing: <strong>{{ patient.name }}</strong> (Age: {{ patient.age }})</article>
         </div> 
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
         <div class="card">
-            <div class="card-logo">
-                🫁
-            </div>
-            <p>Drag & Drop your CT scan</p>
-            <span>Supports JPF,PNG,DICOM</span>
-            <form action="{{url_for('dashboard')}}" method="POST" enctype="multipart/form-data">
-                <input type="file" name="file" required style="margin: 10px 0;">
-            <button type="submit">Upload & Analyze</button>
+            <div class="card-logo">🫁</div>
+            <p>Upload Chest X-Ray / CT Scan</p>
+            <span>Supports JPG, PNG</span>
+            <form action="{{ url_for('dashboard', patient_id=patient.id) }}" method="POST" enctype="multipart/form-data">
+                <input type="file" name="file" accept="image/*" required>
+                <button type="submit">Upload & Analyze with SVM</button>
             </form>
         </div>
+
         <div class="stats">
             <div class="stat-card" id="one">
-                Previous Scans
-                <h3>{{scan_count}}</h3>
+                Total Scans
+                <h3>{{ scan_count }}</h3>
             </div>
             <div class="stat-card" id="two">
-                Accuracy
-                <h3>{{avg_accuracy}}</h3>
+                Avg. Accuracy
+                <h3>{{ avg_accuracy }}%</h3>
+            </div>
+        </div>
+
+        <div class="history-toggle-container">
+            <button id="toggleHistory" class="toggle-btn">Show/Hide Previous History</button>
+        </div>
+
+        <div id="historyTable" class="history-box" style="display: none;">
+            <h3 class="history-title">Scan History for {{ patient.name }}</h3>
+            <div class="table-wrapper">
+                <table class="scan-table">
+                    <thead>
+                        <tr>
+                            <th>File Name</th>
+                            <th>Result</th>
+                            <th>Accuracy</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for scan in history %}
+                        <tr>
+                            <td>{{ scan.filename }}</td>
+                            <td class="result-data {{ 'positive' if scan.result == 'Positive' else 'normal' }}">
+                                {{ scan.result }}
+                            </td>
+                            <td>{{ scan.accuracy }}%</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="empty-msg">No previous scans found for this patient.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+
     <script>
+        // Mobile Menu Logic
+        const hamburger = document.querySelector(".hamburger");
+        const mobileMenu = document.querySelector(".mobile-menu");
+        const closeMenu = document.querySelector(".close-menu");
 
-const hamburger = document.querySelector(".hamburger");
-const mobileMenu = document.querySelector(".mobile-menu");
-const closeMenu = document.querySelector(".close-menu");
+        hamburger.addEventListener("click", () => mobileMenu.classList.add("active"));
+        closeMenu.addEventListener("click", () => mobileMenu.classList.remove("active"));
 
-hamburger.addEventListener("click", () => {
-    mobileMenu.classList.add("active");
-});
+        // History Toggle Logic
+        const toggleBtn = document.getElementById("toggleHistory");
+        const historyBox = document.getElementById("historyTable");
 
-closeMenu.addEventListener("click", () => {
-    mobileMenu.classList.remove("active");
-});
-
-</script>
+        toggleBtn.addEventListener("click", () => {
+            if (historyBox.style.display === "none") {
+                historyBox.style.display = "block";
+                historyBox.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                historyBox.style.display = "none";
+            }
+        });
+    </script>
 </body>
-</html>  
+</html>
