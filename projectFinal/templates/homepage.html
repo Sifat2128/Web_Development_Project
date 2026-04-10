@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PulmoScan | AI Lung Detection</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='homepage.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">🫁 PulmoScan</div>
+        
+        <ul class="nav-links">
+            <li><a href="{{ url_for('home') }}">Home</a></li>
+            <li><a href="{{ url_for('about') }}">About</a></li>
+            <li><a href="https://wa.me/8801776111134" target="_blank">Contact</a></li>
+        </ul>
+        
+        <div class="auth">
+            <div class="hamburger">
+                <img src="{{ url_for('static', filename='images/Hamburger.svg') }}" alt="Menu">
+            </div>
+
+            {% if session.get('user_id') %}
+                <a class="login" href="{{ url_for('dashboard_redirect') }}">Dashboard</a>
+                <a class="signup" href="{{ url_for('logout') }}">Logout</a>
+            {% else %}
+                <a class="login" href="{{ url_for('login') }}">Login</a>
+                <a class="signup" href="{{ url_for('signup') }}">Get Started</a>
+            {% endif %}
+
+            <div class="mobile-menu">
+                <div class="close-menu">✕</div>
+                <a href="{{ url_for('home') }}">Home</a>
+                <a href="{{ url_for('about') }}">About</a>
+                {% if session.get('user_id') %}
+                    <a href="{{ url_for('dashboard_redirect') }}">Dashboard</a>
+                    <a href="{{ url_for('logout') }}">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}">Login</a>
+                    <a href="{{ url_for('signup') }}">SignUp</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <h1>AI Powered Lung Disease Detection</h1>
+        <p>
+            PulmoScan uses deep learning to analyze lung CT scans and detect
+            potential diseases early, helping doctors and patients act faster.
+        </p>
+        <div class="hero-buttons">
+            {% if session.get('user_id') %}
+                <a href="{{ url_for('dashboard_redirect') }}" class="primary">Go to Dashboard</a>
+            {% else %}
+                <a href="{{ url_for('signup') }}" class="primary">Start Scanning</a>
+            {% endif %}
+            <a href="{{ url_for('about') }}" class="secondary">Learn More</a>
+        </div>
+    </section>
+
+    <section class="how">
+        <h2>How PulmoScan Works</h2>
+        <div class="steps">
+            <div class="step"><h3>1</h3><p>Upload your CT Scan image.</p></div>
+            <div class="step"><h3>2</h3><p>Our AI model analyzes the lung structure.</p></div>
+            <div class="step"><h3>3</h3><p>Receive a detailed prediction instantly.</p></div>
+        </div>
+    </section>
+
+    <footer>
+        <p>© 2026 PulmoScan — AI Powered Healthcare</p>
+    </footer>
+
+    <script>
+        const hamburger = document.querySelector(".hamburger");
+        const mobileMenu = document.querySelector(".mobile-menu");
+        const closeMenu = document.querySelector(".close-menu");
+
+        hamburger.addEventListener("click", () => {
+            mobileMenu.classList.add("active");
+        });
+
+        closeMenu.addEventListener("click", () => {
+            mobileMenu.classList.remove("active");
+        });
+    </script>
+</body>
+</html>

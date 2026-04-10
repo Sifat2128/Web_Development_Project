@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | PulmoScan</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard_style.css') }}">
+</head>
+<body>
+    <div class="nav">
+        <div class="logo">
+            <span>🫁</span> PulmoScan
+        </div>
+        <div class="nav-links">
+             <a href="{{ url_for('dashboard', patient_id=patient.id) }}">Dashboard</a>
+             <a href="{{ url_for('patient_info') }}">New Patient</a>
+             <a href="{{ url_for('about') }}">About</a>
+             <a href="{{ url_for('logout') }}" style="color: #ff6b6b;">Logout</a>
+        </div>
+        <div class="tog">
+            <div class="profile">
+                <img src="https://i.pravatar.cc/100" alt="Profile">
+                <span>{{ user_name.split('@')[0] if user_name else 'Doctor' }}</span>
+            </div>
+            <div class="hamburger">
+                <img src="{{ url_for('static', filename='images/Hamburger.svg') }}" alt="Menu">
+            </div>
+            <div class="mobile-menu">
+                <div class="close-menu">✕</div>
+                <a href="{{ url_for('dashboard', patient_id=patient.id) }}">Dashboard</a>
+                <a href="{{ url_for('patient_info') }}">New Patient</a>
+                <a href="{{ url_for('about') }}">About</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="hero">
+        <div class="head">
+            <p><span>{{ user_name.split('@')[0] if user_name else 'Doctor' }}</span>, ready to Scan?</p>
+            <article>Currently analyzing: <strong>{{ patient.name }}</strong> (Age: {{ patient.age }})</article>
+        </div> 
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="card">
+            <div class="card-logo">🫁</div>
+            <p>Upload Chest X-Ray / CT Scan</p>
+            <span>Supports JPG, PNG</span>
+            <form action="{{ url_for('dashboard', patient_id=patient.id) }}" method="POST" enctype="multipart/form-data">
+                <input type="file" name="file" accept="image/*" required>
+                <button type="submit">Upload & Analyze with SVM</button>
+            </form>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card" id="one">
+                Total Scans
+                <h3>{{ scan_count }}</h3>
+            </div>
+            <div class="stat-card" id="two">
+                Avg. Accuracy
+                <h3>{{ avg_accuracy }}%</h3>
+            </div>
+        </div>
+
+        <div class="history-toggle-container">
+            <button id="toggleHistory" class="toggle-btn">Show/Hide Previous History</button>
+            <form id="clearHistoryForm" action="{{ url_for('clear_history', patient_id=patient.id) }}" method="POST">
+                <button type="submit" class="danger-btn">Clear All History</button>
+            </form>
+        </div>
+
+        <div id="historyTable" class="history-box" style="display: none;">
+            <h3 class="history-title">Scan History for {{ patient.name }}</h3>
+            <div class="table-wrapper">
+                <table class="scan-table">
+                    <thead>
+                        <tr>
+                            <th>File Name</th>
+                            <th>Result</th>
+                            <th>Accuracy</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for scan in history %}
+                        <tr>
+                            <td>{{ scan.filename }}</td>
+                            <td class="result-data {{ 'positive' if scan.result == 'Positive' else 'normal' }}">
+                                {{ scan.result }}
+                            </td>
+                            <td>{{ scan.accuracy }}%</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="empty-msg">No previous scans found for this patient.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="chat-box">
+            <div class="chat-head">
+                <h3>PulmoScan AI Assistant</h3>
+                <p>Ask patient questions, scan explanation, and next steps.</p>
+            </div>
+
+            <div id="chatMessages" class="chat-messages">
+                {% if chat_history %}
+                    {% for msg in chat_history %}
+                        <div class="msg {{ 'user-msg' if msg.role == 'user' else 'bot-msg' }}">
+                            <div class="msg-role">{{ 'You' if msg.role == 'user' else 'Assistant' }}</div>
+                            <div class="msg-content">{{ msg.content }}</div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="msg bot-msg">
+                        <div class="msg-role">Assistant</div>
+                        <div class="msg-content">Hi, I am ready to help explain results and answer patient-friendly questions.</div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <form id="chatForm" class="chat-form">
+                <textarea id="chatInput" rows="3" placeholder="Type your question..." required></textarea>
+                <button type="submit" id="sendBtn">Send</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Mobile Menu Logic
+        const hamburger = document.querySelector(".hamburger");
+        const mobileMenu = document.querySelector(".mobile-menu");
+        const closeMenu = document.querySelector(".close-menu");
+
+        hamburger.addEventListener("click", () => mobileMenu.classList.add("active"));
+        closeMenu.addEventListener("click", () => mobileMenu.classList.remove("active"));
+
+        // History Toggle Logic
+        const toggleBtn = document.getElementById("toggleHistory");
+        const historyBox = document.getElementById("historyTable");
+
+        toggleBtn.addEventListener("click", () => {
+            if (historyBox.style.display === "none") {
+                historyBox.style.display = "block";
+                historyBox.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                historyBox.style.display = "none";
+            }
+        });
+
+        const clearHistoryForm = document.getElementById("clearHistoryForm");
+        clearHistoryForm.addEventListener("submit", (e) => {
+            const ok = confirm(
+                "This will permanently delete all scan history and chat history for this patient from this device. Continue?"
+            );
+            if (!ok) e.preventDefault();
+        });
+
+        // Chat logic
+        const chatForm = document.getElementById("chatForm");
+        const chatInput = document.getElementById("chatInput");
+        const chatMessages = document.getElementById("chatMessages");
+        const sendBtn = document.getElementById("sendBtn");
+        const chatApiUrl = "{{ url_for('chat_api', patient_id=patient.id) }}";
+
+        function addMessage(role, text) {
+            const wrapper = document.createElement("div");
+            wrapper.className = `msg ${role === "user" ? "user-msg" : "bot-msg"}`;
+
+            const roleEl = document.createElement("div");
+            roleEl.className = "msg-role";
+            roleEl.textContent = role === "user" ? "You" : "Assistant";
+
+            const contentEl = document.createElement("div");
+            contentEl.className = "msg-content";
+            contentEl.textContent = text;
+
+            wrapper.appendChild(roleEl);
+            wrapper.appendChild(contentEl);
+            chatMessages.appendChild(wrapper);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function addThinkingMessage() {
+            const wrapper = document.createElement("div");
+            wrapper.className = "msg bot-msg thinking-msg";
+            wrapper.id = "thinkingMsg";
+
+            const roleEl = document.createElement("div");
+            roleEl.className = "msg-role";
+            roleEl.textContent = "Assistant";
+
+            const contentEl = document.createElement("div");
+            contentEl.className = "msg-content";
+            contentEl.innerHTML = 'Connecting to model <span class="dots"><span>.</span><span>.</span><span>.</span></span>';
+
+            wrapper.appendChild(roleEl);
+            wrapper.appendChild(contentEl);
+            chatMessages.appendChild(wrapper);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function removeThinkingMessage() {
+            const thinking = document.getElementById("thinkingMsg");
+            if (thinking) thinking.remove();
+        }
+
+        chatForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            addMessage("user", text);
+            chatInput.value = "";
+            sendBtn.disabled = true;
+            sendBtn.textContent = "Thinking...";
+            addThinkingMessage();
+
+            try {
+                const res = await fetch(chatApiUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: text })
+                });
+                const data = await res.json();
+                removeThinkingMessage();
+                if (data.ok) {
+                    addMessage("assistant", data.reply);
+                } else {
+                    addMessage("assistant", data.error || "Something went wrong.");
+                }
+            } catch (err) {
+                removeThinkingMessage();
+                addMessage("assistant", "Unable to connect to chat service right now.");
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = "Send";
+                chatInput.focus();
+            }
+        });
+    </script>
+</body>
+</html>
