@@ -7,37 +7,35 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='dashboard_style.css') }}">
 </head>
 <body>
-    <div class="nav">
-        <div class="logo">
+    <nav class="main-navbar">
+        <div class="nav-logo">
             <span>🫁</span> PulmoScan
         </div>
-        <div class="nav-links">
-             <a href="{{ url_for('dashboard', patient_id=patient.id) }}">Dashboard</a>
-             <a href="{{ url_for('patient_info') }}">New Patient</a>
-             <a href="{{ url_for('about') }}">About</a>
-             <a href="{{ url_for('logout') }}" style="color: #ff6b6b;">Logout</a>
-        </div>
-        <div class="tog">
-            <div class="profile">
-                <img src="https://i.pravatar.cc/100" alt="Profile">
-                <span>{{ user_name.split('@')[0] if user_name else 'Doctor' }}</span>
+        
+        <div class="nav-right-container">
+            <div class="nav-links">
+                 <a href="{{ url_for('dashboard', patient_id=patient.id) }}">Dashboard</a>
+                 <a href="{{ url_for('patient_info') }}">New Patient</a>
+                 <a href="{{ url_for('about') }}">About</a>
+                 <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
             </div>
-            <div class="hamburger">
-                <img src="{{ url_for('static', filename='images/Hamburger.svg') }}" alt="Menu">
-            </div>
-            <div class="mobile-menu">
-                <div class="close-menu">✕</div>
-                <a href="{{ url_for('dashboard', patient_id=patient.id) }}">Dashboard</a>
-                <a href="{{ url_for('patient_info') }}">New Patient</a>
-                <a href="{{ url_for('about') }}">About</a>
-                <a href="{{ url_for('logout') }}">Logout</a>
+
+            <div class="profile-pill">
+                {% if session.get('user_picture') %}
+                    <img src="{{ session['user_picture'] }}" alt="Profile" class="profile-img">
+                {% else %}
+                    <div class="profile-fallback">
+                        {{ session.get('username_prefix', 'D')[0].upper() }}
+                    </div>
+                {% endif %}
+                <span class="profile-name">{{ session.get('username_prefix', 'Doctor') }}</span>
             </div>
         </div>
-    </div>
+    </nav>
 
     <div class="hero">
         <div class="head">
-            <p><span>{{ user_name.split('@')[0] if user_name else 'Doctor' }}</span>, ready to Scan?</p>
+            <p><span>{{ session.get('username_prefix', 'Doctor') }}</span>, ready to Scan?</p>
             <article>Currently analyzing: <strong>{{ patient.name }}</strong> (Age: {{ patient.age }})</article>
         </div> 
 
@@ -92,7 +90,7 @@
                         {% for scan in history %}
                         <tr>
                             <td>{{ scan.filename }}</td>
-                            <td class="result-data {{ 'positive' if scan.result == 'Positive' else 'normal' }}">
+                            <td class="result-data {{ 'positive' if scan.result != 'Normal' else 'normal' }}">
                                 {{ scan.result }}
                             </td>
                             <td>{{ scan.accuracy }}%</td>
@@ -137,15 +135,6 @@
     </div>
 
     <script>
-        // Mobile Menu Logic
-        const hamburger = document.querySelector(".hamburger");
-        const mobileMenu = document.querySelector(".mobile-menu");
-        const closeMenu = document.querySelector(".close-menu");
-
-        hamburger.addEventListener("click", () => mobileMenu.classList.add("active"));
-        closeMenu.addEventListener("click", () => mobileMenu.classList.remove("active"));
-
-        // History Toggle Logic
         const toggleBtn = document.getElementById("toggleHistory");
         const historyBox = document.getElementById("historyTable");
 
@@ -160,13 +149,10 @@
 
         const clearHistoryForm = document.getElementById("clearHistoryForm");
         clearHistoryForm.addEventListener("submit", (e) => {
-            const ok = confirm(
-                "This will permanently delete all scan history and chat history for this patient from this device. Continue?"
-            );
+            const ok = confirm("This will permanently delete all history records. Continue?");
             if (!ok) e.preventDefault();
         });
 
-        // Chat logic
         const chatForm = document.getElementById("chatForm");
         const chatInput = document.getElementById("chatInput");
         const chatMessages = document.getElementById("chatMessages");
@@ -176,43 +162,16 @@
         function addMessage(role, text) {
             const wrapper = document.createElement("div");
             wrapper.className = `msg ${role === "user" ? "user-msg" : "bot-msg"}`;
-
             const roleEl = document.createElement("div");
             roleEl.className = "msg-role";
             roleEl.textContent = role === "user" ? "You" : "Assistant";
-
             const contentEl = document.createElement("div");
             contentEl.className = "msg-content";
             contentEl.textContent = text;
-
             wrapper.appendChild(roleEl);
             wrapper.appendChild(contentEl);
             chatMessages.appendChild(wrapper);
             chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        function addThinkingMessage() {
-            const wrapper = document.createElement("div");
-            wrapper.className = "msg bot-msg thinking-msg";
-            wrapper.id = "thinkingMsg";
-
-            const roleEl = document.createElement("div");
-            roleEl.className = "msg-role";
-            roleEl.textContent = "Assistant";
-
-            const contentEl = document.createElement("div");
-            contentEl.className = "msg-content";
-            contentEl.innerHTML = 'Connecting to model <span class="dots"><span>.</span><span>.</span><span>.</span></span>';
-
-            wrapper.appendChild(roleEl);
-            wrapper.appendChild(contentEl);
-            chatMessages.appendChild(wrapper);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        function removeThinkingMessage() {
-            const thinking = document.getElementById("thinkingMsg");
-            if (thinking) thinking.remove();
         }
 
         chatForm.addEventListener("submit", async (e) => {
@@ -223,8 +182,6 @@
             addMessage("user", text);
             chatInput.value = "";
             sendBtn.disabled = true;
-            sendBtn.textContent = "Thinking...";
-            addThinkingMessage();
 
             try {
                 const res = await fetch(chatApiUrl, {
@@ -233,19 +190,12 @@
                     body: JSON.stringify({ message: text })
                 });
                 const data = await res.json();
-                removeThinkingMessage();
-                if (data.ok) {
-                    addMessage("assistant", data.reply);
-                } else {
-                    addMessage("assistant", data.error || "Something went wrong.");
-                }
+                if (data.ok) addMessage("assistant", data.reply);
+                else addMessage("assistant", data.error || "An error occurred.");
             } catch (err) {
-                removeThinkingMessage();
-                addMessage("assistant", "Unable to connect to chat service right now.");
+                addMessage("assistant", "Could not connect to service.");
             } finally {
                 sendBtn.disabled = false;
-                sendBtn.textContent = "Send";
-                chatInput.focus();
             }
         });
     </script>
