@@ -6,7 +6,7 @@
 }
 
 html {
-    font-size: 62.5%; /* 1rem = 10px baseline */
+    font-size: 62.5%; 
 }
 
 body { 
@@ -33,7 +33,7 @@ body {
 }
 
 .nav-cons { 
-    display: none; 
+    display: flex; 
     gap: 3rem; 
     align-items: center; 
 }
@@ -51,7 +51,6 @@ body {
     transform: translateY(-0.2rem); 
 }
 
-/* RESPONSIVE NAV BREAKPOINTS */
 @media screen and (min-width: 600px) { 
     .nav-cons { display: flex; } 
 }
@@ -63,20 +62,14 @@ body {
     cursor: pointer; 
 }
 
-.ham-img img { 
-    height: 100%; 
-    width: 100%; 
-    object-fit: fill; 
-}
-
 @media screen and (max-width: 599px) {
+    .nav-cons { display: none; }
     .ham-img { 
         display: inline-block; 
         transform: scale(1.8); 
     }
 }
 
-/* MOBILE DROPDOWN LINKS */
 .mobile-menu {
     position: fixed; 
     top: 0; 
@@ -109,7 +102,6 @@ body {
     text-decoration: none; 
     color: black; 
     font-size: 2.2rem; 
-    transition: .3s; 
 }
 
 /* MAIN HERO VIEWPORT WRAPPER */
@@ -133,50 +125,27 @@ body {
     overflow: hidden;
 }
 
-/* HEADER TABS CONTAINER */
-.log-sign {
-    display: flex; 
-    background: #0b7285; 
-    padding: 1.8rem; 
-    justify-content: space-around;
-}
-
-.log-sign div {
-    display: inline-block;
-}
-
-.log-sign a { 
-    text-decoration: none; 
-    font-size: 1.8rem; 
-    color: #cce7f0; 
-    transition: 0.2s; 
-    padding-bottom: 4px;
-    font-weight: 600;
-}
-
-.log-sign a:hover { 
-    color: white; 
-}
-
-/* Targets the active tab on the signup HTML */
-.signup a { 
-    color: white !important; 
-    font-weight: bold; 
-    border-bottom: 3px solid white; 
-}
-
 /* INTERIOR FORM PADDING */
 .form { 
     padding: 3.5rem 4rem; 
     text-align: center; 
 }
 
-/* Signing Up Header */
-.form p { 
-    font-size: 2.6rem; /* Scaled down slightly from 3.0rem to perfectly match the sleek login format */
-    font-weight: bold; 
-    margin-bottom: 2.5rem; 
-    color: #000000; 
+/* New specific text rules that match your layout perfectly */
+.practitioner-title {
+    font-size: 2.6rem;
+    font-weight: bold;
+    color: #000000;
+    margin-bottom: 0.6rem;
+    text-align: center;
+}
+
+.practitioner-subtitle {
+    font-size: 1.3rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+    line-height: 1.4;
+    text-align: center;
 }
 
 form { 
@@ -194,19 +163,18 @@ form {
 }
 
 .email label, .pass label {
-    font-size: 1.4rem; /* Scaled down perfectly to match the sharp login style labels */
+    font-size: 1.4rem; 
     font-weight: 600;
     color: #333;
 }
 
-/* INPUT BOXES WITH THE SHARPER BALANCED SIZING */
 .email input, .password-wrapper input {
     width: 100%; 
     padding: 1.2rem 1.4rem; 
     border-radius: 0.8rem;
     border: 1.5px solid #0b7285; 
     outline: none;
-    font-size: 1.4rem; /* Perfectly matches login's crisp entry text scale */
+    font-size: 1.4rem; 
     font-family: inherit;
     box-sizing: border-box;
     transition: 0.2s ease;
@@ -222,7 +190,6 @@ form {
     box-shadow: 0 0 0.6rem rgba(11, 114, 133, 0.2);
 }
 
-/* PASSWORD RELATIVE WRAPPER Context */
 .password-wrapper { 
     position: relative; 
     width: 100%; 
@@ -232,7 +199,6 @@ form {
     padding-right: 4.2rem !important; 
 }
 
-/* EYE ICON ALIGNMENT */
 .toggle-icon {
     position: absolute; 
     right: 14px; 
@@ -257,7 +223,6 @@ form {
     color: #0f4c5c;
 }
 
-/* SUBMIT SIGNUP ACTION BUTTON */
 .submit-btn {
     background: #0b7285;
     color: white; 
@@ -278,7 +243,6 @@ form {
     box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.15);
 }
 
-/* FLASH CHANNELS */
 .outer-flash-container {
     position: absolute; 
     top: 2%; 
@@ -301,7 +265,6 @@ form {
     font-size: 1.4rem;
 }
 
-/* FOOTER SETUP */
 .footer { 
     background: #0f4c5c; 
     color: white; 
@@ -316,4 +279,71 @@ form {
         padding-left: 2rem;
         padding-right: 2rem;
     }
+}
+
+/* GOOGLE OAUTH INTERACTION LAYERS */
+.google-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 1.8rem 0 1.4rem 0;
+    color: #777;
+    font-size: 1.3rem;
+}
+
+.google-divider::before, .google-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #dbebee;
+}
+
+.google-divider span { 
+    padding: 0 1.2rem; 
+}
+
+.google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    width: 100%;
+    background-color: #ffffff;
+    color: #222222;
+    border: 1.5px solid #0b7285;
+    padding: 1.1rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+    border-radius: 0.8rem;
+    text-decoration: none;
+    transition: 0.2s ease;
+    box-sizing: border-box;
+}
+
+.google-btn:hover {
+    background-color: #f5fafb;
+    border-color: #0f4c5c;
+    box-shadow: 0 0.4rem 1rem rgba(11, 114, 133, 0.1);
+}
+
+.google-btn svg {
+    width: 1.8rem;
+    height: 1.8rem;
+}
+
+/* REDIRECT SIGN IN FOOTER LINK */
+.bottom-redirect-text {
+    font-size: 1.4rem;
+    color: #666;
+    margin-top: 2.5rem;
+    text-align: center;
+}
+
+.bottom-redirect-text a {
+    color: #0b7285;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.bottom-redirect-text a:hover {
+    text-decoration: underline;
 }
