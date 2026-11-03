@@ -9,7 +9,6 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from authlib.integrations.flask_client import OAuth
 import os
 import json
-import random
 import secrets
 import uuid
 import urllib.request
@@ -19,22 +18,13 @@ import joblib
 import numpy as np
 import torch
 from PIL import Image
-from sqlalchemy import func
 from torchvision import models, transforms
 
-try:
-    import cv2 as cv
-    HAS_CV2 = True
-except Exception:
-    HAS_CV2 = False
-
-try:
-    from skimage.segmentation import clear_border
-    from skimage import measure
-    from sklearn.cluster import KMeans
-    HAS_MASK_DEPS = True
-except Exception:
-    HAS_MASK_DEPS = False
+# Hard imports: if any is missing the app must fail to start, not quietly label every scan "Normal".
+import cv2 as cv
+from skimage.segmentation import clear_border
+from skimage import measure
+from sklearn.cluster import KMeans
 
 app = Flask(__name__)
 # Hosts terminate HTTPS in a proxy; without this, url_for builds http:// links and Google OAuth rejects them.
@@ -90,6 +80,9 @@ google = oauth.register(
 IMAGE_SIZE = 224
 TARGET_SIZE = 512
 CLASS_NAMES = ["Benign", "Malignant", "Normal"]
+# Measured on the 1,478-image held-out test set (AI_End/lung.ipynb, SVM cell). The SVM was trained with
+# probability=False, so there is no per-scan confidence; this whole-model figure is the honest number to show.
+MODEL_TEST_ACCURACY = 93.6
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 transform = transforms.Compose([
@@ -100,15 +93,11 @@ transform = transforms.Compose([
 
 resnet = models.resnet18(weights=None)
 feature_extractor = torch.nn.Sequential(*list(resnet.children())[:-1])
-if os.path.exists(os.path.join(BASE_DIR, "feature_extractor.pth")):
-    feature_extractor.load_state_dict(torch.load(os.path.join(BASE_DIR, "feature_extractor.pth"), map_location="cpu"))
+# No existence checks: a missing model file must stop the app at startup.
+feature_extractor.load_state_dict(torch.load(os.path.join(BASE_DIR, "feature_extractor.pth"), map_location="cpu"))
 feature_extractor.eval()
-
-if os.path.exists(os.path.join(BASE_DIR, "scaler.pkl")) and os.path.exists(os.path.join(BASE_DIR, "svm_model.pkl")):
-    scaler = joblib.load(os.path.join(BASE_DIR, "scaler.pkl"))
-    svm_model = joblib.load(os.path.join(BASE_DIR, "svm_model.pkl"))
-else:
-    scaler, svm_model = None, None
+scaler = joblib.load(os.path.join(BASE_DIR, "scaler.pkl"))
+svm_model = joblib.load(os.path.join(BASE_DIR, "svm_model.pkl"))
 
 # --- DATABASE SCHEMAS ---
 class User(db.Model):
@@ -188,24 +177,26 @@ def generate_lung_mask(ct_img):
     return cv.bitwise_and(neg_img, neg_img, mask=lung_mask)
 
 def predict_lung_condition(img_path):
+    """Return the predicted class name, or None if the image can't be analysed. Never guesses."""
+    raw = cv.imread(img_path, cv.IMREAD_GRAYSCALE)
+    if raw is None:
+        return None
     try:
-        if not HAS_CV2 or not HAS_MASK_DEPS or svm_model is None:
-            return "Normal", round(random.uniform(94.0, 98.5), 2)
-        raw = cv.imread(img_path, cv.IMREAD_GRAYSCALE)
-        if raw is None: raise ValueError()
         img = Image.fromarray(cv.cvtColor(generate_lung_mask(resize_with_padding(enhance_contrast_extended(raw), TARGET_SIZE)), cv.COLOR_GRAY2RGB))
         with torch.no_grad():
             features_flat = feature_extractor(transform(img).unsqueeze(0)).view(1, -1).numpy()
         prediction = svm_model.predict(scaler.transform(features_flat))[0]
-        return CLASS_NAMES[int(prediction)], round(random.uniform(94.0, 98.5), 2)
-    except Exception:
-        return "Normal", round(random.uniform(94.0, 98.5), 2)
+    except Exception as e:
+        print(f"Prediction failed for {img_path}: {e}")
+        return None
+    return CLASS_NAMES[int(prediction)]
 
 # --- LLM SYSTEM PROMPT ASSISTANT ---
 def build_system_prompt(patient, scan_history):
     scan_text = "No scans loaded yet."
     if scan_history:
-        scan_text = f"Latest scan classification: {scan_history[0].result} ({scan_history[0].accuracy}% accuracy)."
+        scan_text = (f"Latest scan classification: {scan_history[0].result}. The model is {MODEL_TEST_ACCURACY}% accurate "
+                     "on its test set, so results must be confirmed by a clinician.")
     return f"You are PulmoScan Assistant. Context: patient={patient.name}, age={patient.age}. {scan_text} Keep answers brief and professional."
 
 def ollama_chat(messages):
@@ -420,22 +411,26 @@ def dashboard(patient_id):
             filename = f"{uuid.uuid4().hex[:12]}_{secure_filename(file.filename)}"
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
-            res_label, acc = predict_lung_condition(filepath)
-            db.session.add(Scan(filename=filename, result=res_label, accuracy=acc, user_id=session['user_id'], patient_id=patient.id))
+            res_label = predict_lung_condition(filepath)
+            if res_label is None:
+                os.remove(filepath)
+                flash('Could not analyse this image. Please upload a clear chest CT scan (PNG or JPG). No result was saved.', 'error')
+                return redirect(url_for('dashboard', patient_id=patient_id))
+            # accuracy column kept so existing databases still work; the model gives no per-scan confidence.
+            db.session.add(Scan(filename=filename, result=res_label, accuracy=0.0, user_id=session['user_id'], patient_id=patient.id))
             db.session.commit()
             return redirect(url_for('dashboard', patient_id=patient_id))
 
     history = Scan.query.filter_by(patient_id=patient_id).order_by(Scan.id.desc()).all()
     chat_history = ChatMessage.query.filter_by(patient_id=patient_id, user_id=session['user_id']).order_by(ChatMessage.created_at.asc()).all()
-    avg_acc = db.session.query(func.avg(Scan.accuracy)).filter(Scan.patient_id == patient_id).scalar() or 0
-    
+
     return render_template(
         "dashboard.html",
         patient=patient,
         history=history,
         chat_history=chat_history,
         scan_count=len(history),
-        avg_accuracy=round(avg_acc, 2)
+        model_accuracy=MODEL_TEST_ACCURACY
     )
 
 @app.route("/api/chat/<int:patient_id>", methods=["POST"])

@@ -63,8 +63,8 @@
                 <h3>{{ scan_count }}</h3>
             </div>
             <div class="stat-card" id="two">
-                Avg. Accuracy
-                <h3>{{ avg_accuracy }}%</h3>
+                Model Test Accuracy
+                <h3>{{ model_accuracy }}%</h3>
             </div>
         </div>
 
@@ -83,7 +83,6 @@
                         <tr>
                             <th>File Name</th>
                             <th>Result</th>
-                            <th>Accuracy</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -93,11 +92,10 @@
                             <td class="result-data {{ 'positive' if scan.result != 'Normal' else 'normal' }}">
                                 {{ scan.result }}
                             </td>
-                            <td>{{ scan.accuracy }}%</td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="3" class="empty-msg">No previous scans found for this patient.</td>
+                            <td colspan="2" class="empty-msg">No previous scans found for this patient.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

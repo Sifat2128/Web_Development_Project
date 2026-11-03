@@ -65,6 +65,23 @@ class WebTests(unittest.TestCase):
         for n in names:
             self.assertFalse(os.path.exists(os.path.join(app.config["UPLOAD_FOLDER"], n)))
 
+    def test_unreadable_image_is_not_labelled_normal(self):
+        self.login_as_a()
+        r = self.client.post(f"/dashboard/{self.pa_id}", data={"file": (io.BytesIO(b"not an image"), "fake.png")},
+                             follow_redirects=True)
+        self.assertIn(b"Could not analyse this image", r.data)
+        with app.app_context():
+            self.assertEqual(Scan.query.count(), 0)          # no fake "Normal" result saved
+        self.assertFalse([f for f in os.listdir(app.config["UPLOAD_FOLDER"]) if f.endswith("_fake.png")])  # bad file removed
+
+    def test_dashboard_shows_no_random_accuracy(self):
+        self.login_as_a()
+        self.client.post(f"/dashboard/{self.pa_id}", data={"file": (png_bytes(), "scan.png")})
+        r = self.client.get(f"/dashboard/{self.pa_id}")
+        self.assertIn(b"Model Test Accuracy", r.data)
+        with app.app_context():
+            self.assertEqual(Scan.query.one().accuracy, 0.0)
+
     def test_patient_form_rejects_bad_age(self):
         self.login_as_a()
         self.client.post("/patient_info", data={"name": "Eve", "age": "abc"})
