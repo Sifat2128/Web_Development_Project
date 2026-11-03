@@ -54,6 +54,7 @@ app.config['MAIL_PASSWORD'] = os.environ.get("MAIL_PASSWORD")
 # Ollama Core Settings
 app.config['OLLAMA_URL'] = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434/api/chat")
 app.config['OLLAMA_MODEL'] = os.environ.get("OLLAMA_MODEL", "qwen3-coder:480b-cloud")
+app.config['OLLAMA_API_KEY'] = os.environ.get("OLLAMA_API_KEY")  # only needed for Ollama's hosted API (https://ollama.com/api/chat)
 
 # Google OAuth Integration Credentials
 app.config['GOOGLE_CLIENT_ID'] = os.environ.get("GOOGLE_CLIENT_ID")
@@ -201,8 +202,11 @@ def build_system_prompt(patient, scan_history):
 
 def ollama_chat(messages):
     try:
-        req = urllib.request.Request(app.config["OLLAMA_URL"], data=json.dumps({"model": app.config["OLLAMA_MODEL"], "stream": False, "messages": messages}).encode("utf-8"), headers={"Content-Type": "application/json"}, method="POST")
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        headers = {"Content-Type": "application/json"}
+        if app.config["OLLAMA_API_KEY"]:
+            headers["Authorization"] = f"Bearer {app.config['OLLAMA_API_KEY']}"
+        req = urllib.request.Request(app.config["OLLAMA_URL"], data=json.dumps({"model": app.config["OLLAMA_MODEL"], "stream": False, "messages": messages}).encode("utf-8"), headers=headers, method="POST")
+        with urllib.request.urlopen(req, timeout=60) as resp:  # large cloud models can take well over 10 s
             return json.loads(resp.read().decode("utf-8")).get("message", {}).get("content", "").strip()
     except Exception:
         return "Assistant interface offline."
