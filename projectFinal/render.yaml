@@ -2,6 +2,8 @@ services:
   - type: web
     name: pulmoscan
     runtime: python
+    # Relative to the repo root (not this file). Without it Render builds at the repo root, where there is no requirements.txt.
+    rootDir: projectFinal
     plan: 1c-2g # 2 GB RAM; app peaks ~500 MB, so the 512 MB plans would get OOM-killed
     region: singapore
     buildCommand: pip install -r requirements.txt
