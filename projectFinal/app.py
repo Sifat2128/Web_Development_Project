@@ -1,12 +1,17 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from werkzeug.middleware.proxy_fix import ProxyFix
 from authlib.integrations.flask_client import OAuth
 import os
 import json
 import random
+import secrets
+import uuid
 import urllib.request
 from datetime import timedelta, datetime
 
@@ -14,7 +19,7 @@ import joblib
 import numpy as np
 import torch
 from PIL import Image
-from sqlalchemy import func, inspect, text
+from sqlalchemy import func
 from torchvision import models, transforms
 
 try:
@@ -32,31 +37,42 @@ except Exception:
     HAS_MASK_DEPS = False
 
 app = Flask(__name__)
-app.secret_key = "pulmoscan_secret"
+# Hosts terminate HTTPS in a proxy; without this, url_for builds http:// links and Google OAuth rejects them.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+app.secret_key = os.environ["SECRET_KEY"]  # no fallback: a default key would let anyone forge sessions
 app.permanent_session_lifetime = timedelta(days=30)
+app.config['SESSION_COOKIE_SAMESITE'] = "Lax"  # other sites can't submit forms with the doctor's cookie
+app.config['SESSION_COOKIE_SECURE'] = not app.debug  # HTTPS-only cookie, except in local --debug runs
 
-# Database & Storage Configurations
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///" + os.path.join(app.root_path, "instance", "pulmoscan.db")
+# Database & Storage Configurations. DATA_DIR must point at a persistent disk in production.
+DATA_DIR = os.environ.get("DATA_DIR") or os.path.join(app.root_path, "instance")
+app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///" + os.path.join(DATA_DIR, "pulmoscan.db")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
+app.config['UPLOAD_FOLDER'] = os.path.join(DATA_DIR, 'uploads')  # outside static/: scans are patient data, never public
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
+ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg"}
+OTP_TTL = timedelta(minutes=10)
+OTP_MAX_ATTEMPTS = 5
 
 # Mail Engine Settings
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'farzanafaizaborno2023@gmail.com'
-app.config['MAIL_PASSWORD'] = 'lzfpgnqhwxrdtemp'
+app.config['MAIL_USERNAME'] = os.environ.get("MAIL_USERNAME")
+app.config['MAIL_PASSWORD'] = os.environ.get("MAIL_PASSWORD")
 
 # Ollama Core Settings
 app.config['OLLAMA_URL'] = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434/api/chat")
 app.config['OLLAMA_MODEL'] = os.environ.get("OLLAMA_MODEL", "qwen3-coder:480b-cloud")
 
 # Google OAuth Integration Credentials
-app.config['GOOGLE_CLIENT_ID'] = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com'
-app.config['GOOGLE_CLIENT_SECRET'] = 'YOUR_GOOGLE_CLIENT_SECRET'
+app.config['GOOGLE_CLIENT_ID'] = os.environ.get("GOOGLE_CLIENT_ID")
+app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get("GOOGLE_CLIENT_SECRET")
 
 db = SQLAlchemy(app)
 mail = Mail(app)
+# shortcut: in-memory counts are per process, fine with one gunicorn worker; use a Redis storage_uri if you scale out.
+limiter = Limiter(get_remote_address, app=app, storage_uri="memory://")
 
 oauth = OAuth(app)
 google = oauth.register(
@@ -99,7 +115,6 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
-    patients = db.relationship('Patient', backref='doctor', lazy=True)
 
 class Patient(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -108,14 +123,13 @@ class Patient(db.Model):
     sex = db.Column(db.String(10))
     phone = db.Column(db.String(20))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    scans = db.relationship('Scan', backref='patient_ref', lazy=True)
 
 class Scan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(255), nullable=False)
     result = db.Column(db.String(50), nullable=False)
     accuracy = db.Column(db.Float, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, default=1)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=False)
 
 class ChatMessage(db.Model):
@@ -126,14 +140,16 @@ class ChatMessage(db.Model):
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-def migrate_sqlite_schema():
-    if not app.config.get("SQLALCHEMY_DATABASE_URI", "").startswith("sqlite:///"): return
-    with db.engine.begin() as conn:
-        inspector = inspect(conn)
-        if "scan" in set(inspector.get_table_names()):
-            columns = {c["name"] for c in inspector.get_columns("scan")}
-            if "patient_id" not in columns: conn.execute(text("ALTER TABLE scan ADD COLUMN patient_id INTEGER"))
-            if "user_id" not in columns: conn.execute(text("ALTER TABLE scan ADD COLUMN user_id INTEGER DEFAULT 1"))
+# Signups waiting for their email code. Kept server-side: the Flask session cookie is readable by its owner.
+class PendingSignup(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(150), unique=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    otp_hash = db.Column(db.String(255), nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    attempts = db.Column(db.Integer, nullable=False, default=0)
+    # Ties the code to the browser that started signup, so a second signup for the same email can't hijack it.
+    token = db.Column(db.String(64), unique=True, nullable=False)
 
 # --- IMAGE CV SEGMENTATION PROCESSING ---
 def enhance_contrast_extended(img, lower=-50, upper=305):
@@ -208,6 +224,7 @@ def home(): return render_template("homepage.html")
 def about(): return render_template("about.html")
 
 @app.route('/signup', methods=['GET', 'POST'])
+@limiter.limit("5/minute", methods=["POST"])
 def signup():
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
@@ -226,85 +243,93 @@ def signup():
             flash('Database authentication error. Please try again.', 'error')
             return redirect(url_for('signup'))
 
-        otp = str(random.randint(100000, 999999))
-        session['temp_user'] = {
-            'email': email, 
-            'password': generate_password_hash(password, method='pbkdf2:sha256'), 
-            'otp': otp
-        }
-        
+        pending = PendingSignup.query.filter_by(email=email).first() or PendingSignup(email=email)
+        pending.password = generate_password_hash(password, method='pbkdf2:sha256')
+        pending.token = secrets.token_urlsafe(32)
         try:
-            msg = Message('Verify Account | PulmoScan', sender=app.config['MAIL_USERNAME'], recipients=[email])
-            msg.body = f"Your PulmoScan security verification code is: {otp}"
-            mail.send(msg)
-            flash('Verification code sent to your email address.', 'success')
-            return redirect(url_for('verify_signup'))
+            issue_otp(pending)
         except Exception as mail_err:
+            db.session.rollback()
             print(f"SMTP Mail Engine Failure: {mail_err}")
-            session.pop('temp_user', None)
             flash('Failed to dispatch registration email. Verify SMTP engine credentials.', 'error')
             return redirect(url_for('signup'))
-            
+        session['pending_token'] = pending.token
+        flash('Verification code sent to your email address.', 'success')
+        return redirect(url_for('verify_signup'))
+
     return render_template('signup.html')
 
+def issue_otp(pending):
+    """Give `pending` a fresh code (stored hashed, short-lived) and email it."""
+    otp = f"{secrets.randbelow(1_000_000):06d}"
+    pending.otp_hash = generate_password_hash(otp)
+    pending.expires_at = datetime.utcnow() + OTP_TTL
+    pending.attempts = 0
+    db.session.add(pending)
+    db.session.commit()
+    msg = Message('Verify Account | PulmoScan', sender=app.config['MAIL_USERNAME'], recipients=[pending.email])
+    msg.body = f"Your PulmoScan security verification code is: {otp}\nIt expires in 10 minutes."
+    mail.send(msg)
+
+def current_pending_signup():
+    return PendingSignup.query.filter_by(token=session.get('pending_token', '')).first()
+
 @app.route('/verify_signup', methods=['GET', 'POST'])
+@limiter.limit("10/minute", methods=["POST"])
 def verify_signup():
-    if 'temp_user' not in session: 
+    pending = current_pending_signup()
+    if not pending:
         flash('Invalid verification instance context. Restart signup sequence.', 'error')
         return redirect(url_for('signup'))
-        
+
     if request.method == 'POST':
-        input_otp = request.form.get('otp', '').strip()
-        cached_data = session['temp_user']
-        
-        if input_otp == cached_data['otp']:
+        if pending.expires_at < datetime.utcnow() or pending.attempts >= OTP_MAX_ATTEMPTS:
+            flash('This code has expired or had too many wrong tries. Request a new code.', 'error')
+            return render_template('verify_signup.html')
+
+        if check_password_hash(pending.otp_hash, request.form.get('otp', '').strip()):
             try:
-                new_user = User(email=cached_data['email'], password=cached_data['password'])
-                db.session.add(new_user)
+                db.session.add(User(email=pending.email, password=pending.password))
+                db.session.delete(pending)
                 db.session.commit()
-                session.pop('temp_user', None)
-                flash('Account created successfully! Please sign in.', 'success')
-                return redirect(url_for('login'))
             except Exception as db_err:
                 db.session.rollback()
                 print(f"SQLAlchemy Commit Aborted: {db_err}")
                 flash('Database persistence error context. Failed to insert record.', 'error')
                 return redirect(url_for('signup'))
-        else:
-            flash('Invalid verification token code.', 'error')
-            
+            session.pop('pending_token', None)
+            flash('Account created successfully! Please sign in.', 'success')
+            return redirect(url_for('login'))
+
+        pending.attempts += 1
+        db.session.commit()
+        flash('Invalid verification token code.', 'error')
+
     return render_template('verify_signup.html')
 
 @app.route('/resend_otp', methods=['GET'])
+@limiter.limit("3/minute")
 def resend_otp():
-    if 'temp_user' not in session:
+    pending = current_pending_signup()
+    if not pending:
         flash('Session layout expired. Please submit registration again.', 'error')
         return redirect(url_for('signup'))
-        
+
     try:
-        cached_user = session['temp_user']
-        new_otp = str(random.randint(100000, 999999))
-        
-        # Keep old credentials intact but append new validation token sequence
-        cached_user['otp'] = new_otp
-        session['temp_user'] = cached_user
-        
-        msg = Message('Verify Account | PulmoScan', sender=app.config['MAIL_USERNAME'], recipients=[cached_user['email']])
-        msg.body = f"Your new PulmoScan security verification code is: {new_otp}"
-        mail.send(msg)
-        
+        issue_otp(pending)
         flash('A new verification code has been successfully dispatched.', 'success')
-        return redirect(url_for('verify_signup'))
     except Exception as e:
+        db.session.rollback()
         print(f"Resend OTP engine process failed: {e}")
         flash('Failed to send verification email. Please check your network connection.', 'error')
-        return redirect(url_for('verify_signup'))
+    return redirect(url_for('verify_signup'))
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("10/minute", methods=["POST"])
 def login():
     if request.method == 'POST':
-        user = User.query.filter_by(email=request.form.get('email')).first()
-        if user and check_password_hash(user.password, request.form.get('password')):
+        user = User.query.filter_by(email=request.form.get('email', '')).first()
+        if user and check_password_hash(user.password, request.form.get('password', '')):
             session.permanent = True
             session['user_id'] = user.id
             session['username_prefix'] = user.email.split('@')[0]
@@ -316,13 +341,16 @@ def login():
 # --- GOOGLE OAUTH FLOWS ---
 @app.route('/login/google')
 def login_google():
+    if not app.config['GOOGLE_CLIENT_ID']:
+        flash("Google sign-in is not configured on this server.", "error")
+        return redirect(url_for('login'))
     redirect_uri = url_for('google_auth', _external=True)
     return google.authorize_redirect(redirect_uri)
 
 @app.route('/google/auth')
 def google_auth():
     try:
-        token = google.authorize_access_token()
+        google.authorize_access_token()
         resp = google.get('userinfo')
         user_info = resp.json()
     except Exception:
@@ -330,8 +358,11 @@ def google_auth():
         return redirect(url_for('login'))
 
     email = user_info.get('email')
-    profile_pic = user_info.get('picture')  
-    username_prefix = email.split('@')[0] if email else 'Doctor'
+    if not email or not user_info.get('verified_email', user_info.get('email_verified', False)):
+        flash("Google did not share a verified email for this account.", "error")
+        return redirect(url_for('login'))
+    profile_pic = user_info.get('picture')
+    username_prefix = email.split('@')[0]
 
     user = User.query.filter_by(email=email).first()
     if not user:
@@ -353,7 +384,15 @@ def google_auth():
 def patient_info():
     if 'user_id' not in session: return redirect(url_for('login'))
     if request.method == 'POST':
-        new_p = Patient(name=request.form.get('name'), age=request.form.get('age'), sex=request.form.get('sex'), phone=request.form.get('phone'), user_id=session['user_id'])
+        name = request.form.get('name', '').strip()
+        try:
+            age = int(request.form.get('age', ''))
+        except ValueError:
+            age = -1
+        if not name or not 0 <= age <= 130:
+            flash('Please enter a patient name and an age between 0 and 130.', 'error')
+            return render_template('patient_info.html')
+        new_p = Patient(name=name[:150], age=age, sex=request.form.get('sex', '')[:10], phone=request.form.get('phone', '')[:20], user_id=session['user_id'])
         db.session.add(new_p)
         db.session.commit()
         return redirect(url_for('dashboard', patient_id=new_p.id))
@@ -372,8 +411,13 @@ def dashboard(patient_id):
 
     if request.method == 'POST':
         file = request.files.get('file')
-        if file:
-            filename = secure_filename(file.filename)
+        if file and file.filename:
+            ext = os.path.splitext(file.filename)[1].lower()
+            if ext not in ALLOWED_EXTENSIONS:
+                flash('Only PNG and JPG images can be uploaded.', 'error')
+                return redirect(url_for('dashboard', patient_id=patient_id))
+            # Random prefix: two uploads named "scan.png" must not overwrite each other.
+            filename = f"{uuid.uuid4().hex[:12]}_{secure_filename(file.filename)}"
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
             res_label, acc = predict_lung_condition(filepath)
@@ -390,7 +434,6 @@ def dashboard(patient_id):
         patient=patient,
         history=history,
         chat_history=chat_history,
-        user_name=session.get('username_prefix', 'Doctor'),
         scan_count=len(history),
         avg_accuracy=round(avg_acc, 2)
     )
@@ -399,13 +442,15 @@ def dashboard(patient_id):
 def chat_api(patient_id):
     if 'user_id' not in session: return jsonify({"ok": False}), 401
     patient = Patient.query.get_or_404(patient_id)
-    user_message = (request.get_json(silent=True) or {}).get("message", "").strip()
+    if patient.user_id != session['user_id']: abort(404)
+    user_message = str((request.get_json(silent=True) or {}).get("message", "")).strip()[:4000]
     if not user_message: return jsonify({"ok": False}), 400
 
     db.session.add(ChatMessage(patient_id=patient_id, user_id=session['user_id'], role="user", content=user_message))
     db.session.commit()
 
-    scans = Scan.query.filter_by(patient_id=patient_id).order_by(Scan.id.desc()).all()
+    latest_scan = Scan.query.filter_by(patient_id=patient_id).order_by(Scan.id.desc()).first()
+    scans = [latest_scan] if latest_scan else []
     recent_msgs = ChatMessage.query.filter_by(patient_id=patient_id, user_id=session['user_id']).order_by(ChatMessage.created_at.desc()).limit(10).all()
     
     messages = [{"role": "system", "content": build_system_prompt(patient, scans)}]
@@ -419,7 +464,13 @@ def chat_api(patient_id):
 @app.route("/clear_history/<int:patient_id>", methods=["POST"])
 def clear_history(patient_id):
     if 'user_id' not in session: return redirect(url_for('login'))
-    Scan.query.filter_by(patient_id=patient_id, user_id=session['user_id']).delete()
+    scans = Scan.query.filter_by(patient_id=patient_id, user_id=session['user_id'])
+    for scan in scans:  # delete the image files too, not just the rows
+        try:
+            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], scan.filename))
+        except FileNotFoundError:
+            pass
+    scans.delete()
     ChatMessage.query.filter_by(patient_id=patient_id, user_id=session['user_id']).delete()
     db.session.commit()
     return redirect(url_for('dashboard', patient_id=patient_id))
@@ -429,10 +480,11 @@ def logout():
     session.clear()
     return redirect(url_for('home'))
 
+# Runs at import so gunicorn (which skips __main__) also gets tables and folders.
+with app.app_context():
+    os.makedirs(DATA_DIR, exist_ok=True)
+    db.create_all()
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
 if __name__ == "__main__":
-    with app.app_context():
-        os.makedirs(os.path.join(app.root_path, "instance"), exist_ok=True)
-        db.create_all()
-        migrate_sqlite_schema()
-        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     app.run(debug=True)

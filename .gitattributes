@@ -1,0 +1,3 @@
+# Same line endings for everyone (Windows, Linux, macOS): LF, which the Linux servers expect.
+# Git detects binary files (models, images, databases) itself and never touches them.
+* text=auto eol=lf

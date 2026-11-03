@@ -12,7 +12,7 @@
 /* Fix the background and height issues */
 .main {
     background: #f4f7f6; /* Add a fallback color */
-    background-image: url("/static/images/background.png"); 
+    background-image: url("/static/images/background.webp"); 
     background-size: cover;
     background-position: center;
     min-height: 100vh; /* Changed from 85vh to cover full screen */

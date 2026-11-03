@@ -27,12 +27,6 @@ color:white;
 font-size:1.6rem;
 font-weight:600;
 }
-.logo-invi
-{
-    display: none;
-    font-size:1.6rem;
-    font-weight:600;
-}
 .nav-links{
 list-style:none;
 display:flex;
@@ -281,88 +275,6 @@ transition: 0.3s;
 }
 
 
-.features{
-padding:80px 8%;
-text-align:center;
-background:#E8F6F7;
-}
-
-.feature-grid{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:30px;
-margin-top:40px;
-}
-
-.feature{
-background:white;
-padding:30px;
-border-radius:12px;
-box-shadow:0 5px 20px rgba(0,0,0,0.08);
-transition: 0.3s;
-}
-.feature:hover 
-{
-    transform:translateY(-.6rem);
-    box-shadow:0 1rem 2.5rem rgba(0,0,0,.15);
-}
-
-.accuracy{
-padding:80px 8%;
-text-align:center;
-}
-
-.stats{
-display:flex;
-justify-content:center;
-gap:50px;
-margin-top:40px;
-}
-
-.stat{
-background:white;
-padding:30px 40px;
-border-radius:12px;
-box-shadow:0 5px 20px rgba(0,0,0,0.08);
-}
-
-.stat h3{
-font-size:2rem;
-color:#0F6C74;
-}
-
-
-.cta{
-text-align:center;
-padding:80px 10%;
-background:#0F6C74;
-color:white;
-}
-.cta a
-{
-    text-decoration: none;
-    /* margin-top: 2rem; */
-   
-}
-
-.cta .button{
-/* margin-top:2rem; */
-padding:14px 30px;
-border:none;
-border-radius:8px;
-background:white;
-color:#0F6C74;
-font-weight:600;
-cursor:pointer;
- transition: 0.3s;
- display: inline-block;
-}
-.cta .button:hover
-{
-    transform:translateY(-0.6rem);
-    box-shadow:0 1rem 2.5rem rgba(0,0,0,.15);
-}
-
 
 footer{
 text-align:center;
@@ -383,16 +295,6 @@ font-size:2.3rem;
 grid-template-columns:1fr 1fr;
 }
 
-.feature-grid{
-grid-template-columns:1fr 1fr;
-}
-
-.stats{
-flex-direction:column;
-align-items:center;
-gap:25px;
-}
-
 }
 
 
@@ -402,16 +304,6 @@ gap:25px;
 padding-right: .275rem;
 padding-left: .275rem;
 }
-/* .logo
-{
-    display: none;
-}
-.logo-invi
-{
-    display: inline-block;
-    font-size:1.6rem;
-    font-weight:600;
-} */
 .nav-links{
 flex-direction:column;
 align-items:center;
@@ -436,18 +328,6 @@ flex-direction:column;
 
 .steps{
 grid-template-columns:1fr;
-}
-
-.feature-grid{
-grid-template-columns:1fr;
-}
-
-.stat{
-width:80%;
-}
-
-.cta{
-padding:60px 6%;
 }
 
 }

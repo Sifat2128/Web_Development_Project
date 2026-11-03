@@ -106,7 +106,7 @@ body {
 
 /* MAIN HERO VIEWPORT WRAPPER */
 .main {
-    background: url("images/background.png") no-repeat center/cover;
+    background: url("images/background.webp") no-repeat center/cover;
     min-height: 85vh; 
     display: flex; 
     justify-content: center; 

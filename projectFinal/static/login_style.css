@@ -106,7 +106,7 @@ body {
 
 /* MAIN HERO VIEWPORT WRAPPER */
 .main {
-    background: url("images/background.png") no-repeat center/cover;
+    background: url("images/background.webp") no-repeat center/cover;
     min-height: 85vh; 
     display: flex; 
     justify-content: center; 
@@ -267,10 +267,6 @@ form {
     font-weight: 600; 
     font-size: 1.4rem;
 }
-
-/* Support for dynamic Flask styling categories */
-.external-flash.error { border-left-color: #ea4335; color: #9b1c1c; background-color: #fdf2f2; }
-.external-flash.success { border-left-color: #34a853; color: #03543f; background-color: #f3faf7; }
 
 .footer { 
     background: #0f4c5c; 

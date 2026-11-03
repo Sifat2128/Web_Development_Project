@@ -212,13 +212,13 @@ body {
   width: 100%;
 }
 
-.alert-success, .alert-info {
+.alert-success {
   color: #0b7285 !important;
   background-color: #e3fafc !important;
   border-color: #99e9f2 !important;
 }
 
-.alert-error, .alert-danger {
+.alert-error {
   color: #c92a2a !important;
   background-color: #fff5f5 !important;
   border-color: #ffa8a8 !important;

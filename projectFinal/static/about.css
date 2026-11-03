@@ -189,15 +189,6 @@ transform:scale(1.05);
 }
 
 
-
-.features{
-
-padding:8rem 6rem;
-
-background:#eef6f8;
-
-}
-
 .section-title{
 
 text-align:center;
@@ -209,50 +200,6 @@ margin-bottom:5rem;
 color:#0b7285;
 
 }
-
-.feature-grid{
-
-display:grid;
-
-grid-template-columns:repeat(auto-fit,minmax(22rem,1fr));
-
-gap:3rem;
-
-}
-
-.feature-card{
-
-background:white;
-
-padding:3rem;
-
-border-radius:1rem;
-
-box-shadow:0 .5rem 2rem rgba(0,0,0,.08);
-
-transition:.3s;
-
-}
-
-.feature-card:hover{
-
-transform:translateY(-.6rem);
-
-box-shadow:0 1rem 2.5rem rgba(0,0,0,.15);
-
-}
-
-.feature-card h3{
-font-size:2rem;
-margin-bottom:1rem;
-color:#0b7285;
-}
-
-.feature-card p{
-font-size:1.5rem;
-color:#555;
-}
-
 
 
 .team{
@@ -417,12 +364,6 @@ padding:7rem 2rem;
 }
 
 .about{
-
-padding:6rem 2rem;
-
-}
-
-.features{
 
 padding:6rem 2rem;
 
